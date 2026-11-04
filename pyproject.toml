@@ -1,6 +1,6 @@
 [project]
 name = "paradee"
-version = "1.2.1"
+version = "1.2.0"
 description = "An 8M-parameter English text-to-speech model distilled from Kokoro-82M"
 readme = "README.md"
 license = "Apache-2.0"
@@ -17,6 +17,9 @@ dependencies = [
     "phonemizer-fork",
     "espeakng-loader",
 ]
+
+[project.optional-dependencies]
+mp3 = ["lameenc>=1.7"]
 
 [project.scripts]
 paradee = "paradee.__main__:main"

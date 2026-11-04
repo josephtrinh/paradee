@@ -25,6 +25,29 @@ python -m paradee "Paradee is a small voice that runs anywhere." -o hello.wav
 python -m paradee "Paradee is a small voice that runs anywhere." --voice bf_isabella -o hello_isabella.wav
 ```
 
+### Save text as MP3
+
+From a checkout of this repository, install the MP3 extra and run `paradee.py`:
+
+```bash
+pip install -e '.[mp3]'
+python3 paradee.py "Hello there."
+python3 paradee.py --text "Hello there." --voice bf_isabella --output hello.mp3 --quality 160
+python3 paradee.py --file article.txt -o article.mp3
+cat article.txt | python3 paradee.py -o article.mp3
+```
+
+Edit `DEFAULT_VOICE`, `DEFAULT_OUTPUT`, and `DEFAULT_QUALITY` at the top of
+`paradee.py` to change its settings. CLI options override those settings. The
+defaults are `af_heart`, `paradee.mp3`, and 128 kbps. Choose one text source:
+positional text, `--text`, `--file` (UTF-8), or stdin when no source is supplied.
+
+`--quality` sets the MP3 bitrate in kbps: 8, 16, 24, 32, 40, 48, 56, 64, 80,
+96, 112, 128, 144, or 160. Higher bitrates use more space. Output is mono at the
+model's 24 kHz sample rate. MP3 encoding uses `lameenc` and needs no FFmpeg
+installation. The first run downloads the model and pronunciation resources.
+An existing output file is overwritten.
+
 From Python:
 
 ```python
@@ -35,14 +58,6 @@ tts = Paradee()   # downloads the 8.5 MB model from the Hugging Face Hub the fir
 audio = tts("Paradee is a small voice that runs anywhere.")                     # af_heart
 audio = tts("Paradee is a small voice that runs anywhere.", voice="bm_fable")   # or bf_isabella, am_puck
 sf.write("hello.wav", audio, SAMPLE_RATE)
-```
-
-`with_timestamps` also says when each word is spoken, for captions or for highlighting the word
-being read. The times come from the durations the audio was made from:
-
-```python
-audio, words = tts.with_timestamps("Paradee is a small voice that runs anywhere.")
-# words: [("Paradee", 0.25, 0.84), ("is", 0.84, 0.96), ("a", 0.96, 1.06), ...]: (text, start, end) in seconds
 ```
 
 Text is turned into phonemes with [misaki](https://github.com/hexgrad/misaki), Kokoro's own
@@ -136,8 +151,6 @@ between 2 and 8 kHz (phase is the timing of each frequency's wave), to remove a 
 1.1 the new head does not have that problem and the filter is gone.
 
 The code for every step is in [`training/`](training/). It runs on one laptop.
-To rebuild the 1.2 ONNX files from the released PyTorch weights, see
-[step 6 in the training README](training/README.md#6-exporting-12-from-the-released-weights).
 
 ## Using the ONNX file directly
 
@@ -148,10 +161,6 @@ The model is one ONNX graph that goes from token ids to audio:
   input is `speed`, float32 `[1]`, where 1.0 is normal speed. In 1.2 the third input is `voice`,
   int64 `[1]`, the voice's position in the `voices` list in `config.json` (0 is `af_heart`).
 - **Output:** `waveform`, float32 `[1, samples]` at 24 kHz.
-- **Durations:** the graph also computes each token's length in frames of 600 samples, rounded,
-  as the tensor `/Clip_output_0`, float32 `[1, T]`, pads included. The frames add up to the
-  waveform's length exactly. It is not a graph output in the released files; `paradee/tts.py`
-  adds it as one when it loads the file, and `with_timestamps` turns it into word times.
 
 [`web/misaki.js`](web/misaki.js) is for the browser. Browser phonemizers such as
 [kokoro-js](https://github.com/hexgrad/kokoro/tree/main/kokoro.js) use eSpeak NG, which writes
