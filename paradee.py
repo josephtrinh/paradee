@@ -2,8 +2,10 @@
 """Read text with Paradee and save an MP3. CLI options override the settings below."""
 
 import argparse
+from datetime import datetime
 from pathlib import Path
 import sys
+from time import perf_counter
 
 
 # Editable settings (MP3 quality is the bitrate in kbps).
@@ -57,6 +59,10 @@ def main(argv=None):
     if not text.strip():
         parser.error("text must not be empty or whitespace-only")
 
+    started_at = datetime.now().astimezone()
+    started_timer = perf_counter()
+    print(f"Started at: {started_at.isoformat(timespec='seconds')}", flush=True)
+
     try:
         import lameenc
         import numpy as np
@@ -84,10 +90,15 @@ def main(argv=None):
         args.output.write_bytes(mp3)
     except OSError as exc:
         parser.exit(1, f"error: could not save MP3: {exc}\n")
+    elapsed = perf_counter() - started_timer
+    ended_at = datetime.now().astimezone()
     print(f"wrote {args.output} ({len(audio) / SAMPLE_RATE:.1f} s, "
           f"{args.voice}, {args.quality} kbps)")
+    print(f"Ended at: {ended_at.isoformat(timespec='seconds')}")
+    print(f"Generation time: {elapsed:.2f} seconds")
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(main())
+
